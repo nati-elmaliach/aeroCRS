@@ -1,32 +1,85 @@
+<script>
+  <?php
+  if ($_SERVER['PATH_INFO'] == "/") {
+    echo file_get_contents('app.js');
+  }
+  ?>
+</script>
 <?php
-header('Content-type: application/json');
 
-// First, let's define our list of routes.
-// We could put this in a different file and include it in order to separate
-// logic and configuration.
-$routes = array(
-  '/'      => 'Welcome! This is the main page.',
-  '/hello' => 'Hello, World!',
-  '/users' => 'Users!'
-);
 
-// This is our router.
-function router($routes)
+$GLOBALS['jsonFile'] = "pixels.json";
+
+
+function jsonFileExists()
 {
-  // Iterate through a given list of routes.
-  foreach ($routes as $path => $content) {
-    if ($path == $_SERVER['PATH_INFO']) {
-      // If the path matches, display its contents and stop the router.
-      $data = ['name' => 'Nati', 'age' => 1];
-      echo json_encode($data);
+  return file_exists($GLOBALS['jsonFile']);
+}
 
-      return;
+function getNextId($currentPixelsArray)
+{
+  $lastPixel = end(array_values($currentPixelsArray));
+  return $lastPixel->id + 1;
+
+  /*
+  Desperate try to calculate the new id, but thats not correct either.
+  Im leaving the code here, but note that i wrote the solution inside the README.md
+  */
+
+  $lastId =  (string)$lastPixel->id;
+  $lastIdreversed = strrev($lastId);
+
+  $digits_array = str_split($lastIdreversed);
+  foreach ($digits_array as $index => $digit) {
+    $numDigit = (int)$digit;
+    if ($numDigit < 9) {
+      $digits_array[$index] = $numDigit + 1;
+      break;
     }
   }
+
+  $newIdStringReversed = implode("", $digits_array);
+  return (int)strrev($newIdStringReversed);
+}
+// This is our router.
+function router()
+{
+
+  if ($_SERVER['PATH_INFO'] == "/") {
+    // On load, start the program
+    echo '<script>init();</script>';
+
+    // Delete the current json file if exists
+    if (jsonFileExists()) {
+      unlink($GLOBALS['jsonFile']);
+    }
+    return;
+  }
+
+  if ($_SERVER['PATH_INFO'] == "/api/pixel") {
+    $jsonData = file_get_contents("php://input");
+    $jsonDataDecoded = json_decode($jsonData);
+    if (jsonFileExists()) {
+      $inp = file_get_contents($GLOBALS['jsonFile']);
+      $currentPixelsArray = json_decode($inp);
+      $jsonDataDecoded->id = getNextId($currentPixelsArray);
+      array_push($currentPixelsArray, $jsonDataDecoded);
+      file_put_contents($GLOBALS['jsonFile'], json_encode($currentPixelsArray));
+    } else {
+      $jsonDataDecoded->id = 100000000; // Set the first id manually
+      $newPixelsArray = array();
+      array_push($newPixelsArray, $jsonDataDecoded);
+      file_put_contents($GLOBALS['jsonFile'], json_encode($newPixelsArray));
+    }
+
+    return;
+  }
+
+
 
   // This can only be reached if none of the routes matched the path.
   echo 'Sorry! Page not found';
 }
 
 // Execute the router with our list of routes.
-router($routes);
+router();

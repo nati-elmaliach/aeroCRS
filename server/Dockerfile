@@ -1,6 +1,8 @@
 FROM composer
 
-COPY index.php .
+WORKDIR /app
+
+COPY . .
 
 EXPOSE  5001
 

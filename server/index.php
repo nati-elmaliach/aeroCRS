@@ -46,13 +46,14 @@ function router()
 {
 
   if ($_SERVER['PATH_INFO'] == "/") {
-    // On load, start the program
-    echo '<script>init();</script>';
-
     // Delete the current json file if exists
     if (jsonFileExists()) {
       unlink($GLOBALS['jsonFile']);
     }
+
+    // On load, start the program
+    echo '<script>init();</script>';
+
     return;
   }
 
